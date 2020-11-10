@@ -1,0 +1,656 @@
+---
+title: "práctica 1"
+author: "vanesa Lopez"
+date: "6/4/2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r results='hide', message=FALSE, warning=FALSE, include=FALSE}
+library(ggplot2)
+library(readr)
+library(gridExtra)
+library(grid)
+library(plyr)
+library(e1071)
+library(readxl)
+#library(FinCal)
+#install.packages("corrplot")
+library(corrplot)
+```
+
+
+```{r include=FALSE}
+# Carga de datos.
+data <- read_excel("~/Desktop/Práctica_1.xlsx")
+
+```
+
+Reconocimiento de los datos.
+```{r}
+
+str(data)
+names(data)
+summary(data)
+head(data)
+```
+
+Observamos si existen valores nulos.
+```{r}
+apply(data, 2, function(x) any(is.na(x)))
+sum(apply(data,2,is.nan))
+
+```
+
+
+##Determinar los estadísticos que miden posición, dispersión y forma: “Ventas”, “Empleados” y “Productividad”
+
+
+Posición VENTAS
+```{r}
+
+mean(data$VENTAS, na.rm = TRUE)
+median(data$VENTAS)
+mode(data$VENTAS)
+fivenum(data$VENTAS, na.rm = TRUE)
+
+```
+
+
+```{r}
+
+
+boxplot2<-function(x,y)
+{
+  stats=boxplot.stats(x)$stats
+  f=fivenum(x)
+  stats2<-c(f[1],stats,f[5])
+  stats3<-c(f[1],f[5])
+  
+  boxplot(x,main=y,col="steelblue3")
+  abline(h=stats[1],lty=2,col="red")
+  abline(h=stats[5],lty=2,col="red")
+  text(rep(1.35,5),stats,labels=c('BIGOTE INFERIOR','PRIMER CUARTIL','MEDIANA','TERCER CUARTIL','BIGOTE SUPERIOR'))
+  text(rep(.5,7),stats2,labels=round(stats2,digits=4),cex=0.6)
+  text(rep(0.75,2),stats3,labels=c('M?NIMO','M?XIMO'))
+}
+par(mfrow=c(1,1))
+boxplot2(data$VENTAS, 'Variable ventas')
+
+```
+
+
+
+
+Posición NUMERO DE EMPLEADOS
+```{r}
+
+mean(data$VENTAS, na.rm = TRUE)
+median(data$VENTAS)
+mode(data$VENTAS)
+fivenum(data$VENTAS, na.rm = TRUE)
+
+```
+
+```{r include=FALSE}
+
+boxplot2<-function(x,y)
+{
+  stats=boxplot.stats(x)$stats
+  f=fivenum(x)
+  stats2<-c(f[1],stats,f[5])
+  stats3<-c(f[1],f[5])
+  
+  boxplot(x,main=y,col="steelblue3")
+  abline(h=stats[1],lty=2,col="red")
+  abline(h=stats[5],lty=2,col="red")
+  text(rep(1.35,5),stats,labels=c('BIGOTE INFERIOR','PRIMER CUARTIL','MEDIANA','TERCER CUARTIL','BIGOTE SUPERIOR'))
+  text(rep(.5,7),stats2,labels=round(stats2,digits=4),cex=0.6)
+  text(rep(0.75,2),stats3,labels=c('M?NIMO','M?XIMO'))
+}
+par(mfrow=c(1,1))
+boxplot2(data$`NÚMERO DE EMPLEADOS`, 'Variable nº empleados')
+
+```
+
+
+Posición variable PRODUCTIVIDAD
+
+```{r}
+
+mean(data$PRODUCTIVIDAD, na.rm = TRUE)
+median(data$PRODUCTIVIDAD)
+mode(data$PRODUCTIVIDAD)
+fivenum(data$PRODUCTIVIDAD, na.rm = TRUE)
+
+
+
+
+```
+
+
+```{r include=FALSE}
+boxplot2<-function(x,y)
+{
+  stats=boxplot.stats(x)$stats
+  f=fivenum(x)
+  stats2<-c(f[1],stats,f[5])
+  stats3<-c(f[1],f[5])
+  
+  boxplot(x,main=y,col="steelblue3")
+  abline(h=stats[1],lty=2,col="red")
+  abline(h=stats[5],lty=2,col="red")
+  text(rep(1.35,5),stats,labels=c('BIGOTE INFERIOR','PRIMER CUARTIL','MEDIANA','TERCER CUARTIL','BIGOTE SUPERIOR'))
+  text(rep(.5,7),stats2,labels=round(stats2,digits=4),cex=0.6)
+  text(rep(0.75,2),stats3,labels=c('M?NIMO','M?XIMO'))
+}
+par(mfrow=c(1,1))
+boxplot2(data$PRODUCTIVIDAD, 'Variable productividad')
+
+```
+
+
+
+Dispersión variable VENTAS
+
+Atendiendo a los resultados del ejercicio puede observarse que la dispersion de la variable ventas
+que representa las ventas en españa en miles de euros es 124930967 y desviación típica de 11177.25
+```{r}
+
+range(data$VENTAS, na.rm = TRUE)
+var(data$VENTAS)
+sd(data$VENTAS)
+
+
+sd(data$VENTAS)/mean(data$VENTAS) 
+# El cáculo del coeficiente de variación muestra que existe mucha dispersión en los datos.
+
+
+```
+
+
+Dispersión variable NUMERO DE EMPLEADOS
+
+Atendiendo a los resultados del ejercicio puede observarse que la dispersion de la variable empleados
+que representa el numero de empleados en españa es de 508  y desviación típica de 22.53
+```{r}
+
+range(data$`NÚMERO DE EMPLEADOS`, na.rm = TRUE)
+var(data$`NÚMERO DE EMPLEADOS`)
+sd(data$`NÚMERO DE EMPLEADOS`)
+```
+
+
+El coeficiente de variación implica que existe poca variabilidad en los datos y que es una variable con datos muy compactos.
+```{r}
+sd(data$`NÚMERO DE EMPLEADOS`/data$`NÚMERO DE EMPLEADOS`) 
+
+```
+
+
+Dispersión variable PRODUCTIVIDAD
+
+Atendiendo a los resultados del ejercicio puede observarse que la dispersion de la variable productividad
+que representa la productividad en españa en porcentaje es 407.91 y desviación típica de 20
+```{r}
+
+range(data$PRODUCTIVIDAD, na.rm = TRUE)
+var(data$PRODUCTIVIDAD)
+sd(data$PRODUCTIVIDAD)
+
+sd(data$PRODUCTIVIDAD/data$PRODUCTIVIDAD) 
+#EL coeficiente de variación implica  que existe poca variabilidad en los datos y que es una variable con datos muy compactos.
+
+```
+
+
+
+## Gráfico de dispersión para la variable y= ventas y x1= numero de empleados.
+Observamos que existe una relación positiva entre ambas variables. Existe una vinculación lineal.
+Cuando el numero de empleados aumenta tambien aumenta el valor de ventas hasta cierto punto,se observa que al llegar a cierto numero de empleados las ventas aumentan en una menor proporción a medida que el numero de empleados aumenta
+```{r include=FALSE}
+
+
+plot(x=data$`NÚMERO DE EMPLEADOS`, y=data$VENTAS, 
+     xlab="nº empleados", ylab="Ventas (miles)", main="Ventas vs. empleados")
+
+```
+
+
+
+
+
+
+##Gráfico de dispersión para la variable y= ventas y x2= productividad. 
+Observamos que no existe vinculación entre las variables.Cuando la productividad aumenta no tiene un efecto en las ventas.
+```{r include=FALSE}
+
+plot(x=data$PRODUCTIVIDAD, y=data$VENTAS, 
+     xlab="productividad", ylab="Ventas (miles)", main="ventas vs. productividad")
+
+```
+
+
+
+##Gráfico de dispersión para la variable x1= nº empleados y x2= productividad.
+Observamos que no existe vinculación entre las variables.
+```{r include=FALSE}
+
+plot(x=data$PRODUCTIVIDAD, y=data$`NÚMERO DE EMPLEADOS`, 
+     xlab="productividad", ylab="nº empleados", main="productividad vs. nº empleados")
+```
+
+
+
+##Forma de la distribución
+
+Un criterio general para determinar si los coeficientes de simetría y curtosis reflejan una variable 
+semejante a una distribución normal es que ambos valores se encuentren entre -2 y 2. Como puede observarse 
+en los resultados, ambos coeficientes escapan a tal rango por lo que se observa una distribución poco normal.
+Concretamente en la variable productividad destacamos una kurtosis muy elevada de 37, lo que indica
+que la variable contiene 'heavy tails' es decir, presencia de posible outliers que están causando
+valores extremos en las colas.
+
+```{r}
+
+skewness(data$VENTAS)
+kurtosis(data$VENTAS)
+```
+
+
+Veamos la distribución de las variable e un gráfico.
+Aqui se puede ver claramente el efecto de la kurtosis elevada, que está skewed a la derecha.
+```{r include=FALSE}
+
+Histograma<-ggplot(data=data, aes(x= VENTAS))+
+  geom_histogram(binwidth=1500, color="black")+ 
+  xlab("Rango de la variable Ventas")+  
+  ylab("Cantidad de registros")+
+  theme(legend.position="top")+
+  #theme(legend.position="none")+
+  ggtitle("Histograma de la variable Ventas")
+
+Histograma      
+```
+
+
+Veamos la distribución de las variable en un gráfico
+En esta variable tambien podemos ver la elevada kurtosis en la cola de la derecha.
+```{r}
+
+skewness(data$`NÚMERO DE EMPLEADOS`)
+kurtosis(data$`NÚMERO DE EMPLEADOS`)
+```
+
+```{r include=FALSE}
+Histograma<-ggplot(data=data, aes(x= `NÚMERO DE EMPLEADOS`))+
+  geom_histogram(binwidth=10, color="black")+ 
+  xlab("Rango de la variable nº empleados")+  
+  ylab("Cantidad de registros")+
+  theme(legend.position="top")+
+  #theme(legend.position="none")+
+  ggtitle("Histograma de la variable nº empleados")
+
+Histograma  
+
+```
+
+
+En esta variable tambien podemos ver la elevada kurtosis en la cola de la derecha.
+```{r}
+
+skewness(data$PRODUCTIVIDAD)
+kurtosis(data$PRODUCTIVIDAD)
+```
+
+```{r include=FALSE}
+
+Histograma<-ggplot(data=data, aes(x= PRODUCTIVIDAD))+
+  geom_histogram(binwidth=10, color="black")+ 
+  xlab("Rango de la variable productividad")+  
+  ylab("Cantidad de registros")+
+  theme(legend.position="top")+
+  #theme(legend.position="none")+
+  ggtitle("Histograma de la variable productividad")
+
+Histograma  
+
+````
+
+
+Para conocer las relaciones existentes entre cada par de variables usamos la matriz de diagramas de dispersión
+```{r}
+
+labels = data[,c(7,8,9)]
+pairs(labels, col= 'red', pch=18, main= 'Diagrama de dispersión')
+
+
+````
+
+
+
+##CORRELACIONES
+Matriz de correlaciones entre los pares de variables de la tabla.
+Observamos una correlación alta entre ventas y nº de empleados. Por lo tanto, podemos decir 
+que la variabilidad de las ventas queda explicada en un 89% por la variabilidad del nº de empleados.
+
+```{r}
+
+(cor(labels))^2
+
+correlacion<-cor(labels)
+corrplot(correlacion, method="number", type="upper")
+
+```
+
+
+
+##Tabla de contingencia
+
+A través de la tabla de contingencia podemos observar la relación existente entre nº de empleados y ventas. Se observa
+ una fuerte compactación de muestras en los valores más bajos de la variable ventas.
+Se observa una predominancia de las empresas tipo 'Microempresas' que presentan un nivel de ventas relativamente pequeño
+concentrado entre los valores 4,92 hasta 5,810 approximadamente. Las 'Microempresas' representan un 58% para el conjunto de España y en concreto aproximadamente el 56 % presenta el rango de ventas mencionado anteriormente.
+
+Rango variable 'ventas'.
+```{r}
+
+n_sqrt = sqrt(length(data$VENTAS))
+min(data$VENTAS)
+max(data$VENTAS)
+
+amplitud_intervalos = (max(data$VENTAS) - min(data$VENTAS)) / n_sqrt
+
+data$ventas_agrupadas <-  cut(data$VENTAS, c(seq(min(data$VENTAS), max(data$VENTAS), by =amplitud_intervalos )), include.lowest = TRUE)
+
+
+
+
+```
+
+
+
+Calculamos rango para nº empleados
+```{r}
+
+data$size_empresa= ifelse(data$`NÚMERO DE EMPLEADOS` >= 250, 'Gran Empresa', 
+                             ifelse(data$`NÚMERO DE EMPLEADOS` >= 50 ,'Mediana Empresa',
+                                    ifelse(data$`NÚMERO DE EMPLEADOS` >= 10 , 'Pequeña Empresa', ' Microempresa')))
+
+
+tabla_frecuencia = table(data$ventas_agrupadas, data$size_empresa)
+addmargins(tabla_frecuencia, 1)
+
+
+```
+
+
+
+##Cálculo de Chi2 para analizar la independencia entre las dos variables.
+El p-value obtenido es 2.2e-16. Dado que se trata de un valor muy pequeño (p-value < 0.05) rechazamos la hipótesis nula de
+que las variables son independientes. Podemos decir que hay relación entre los intervalos de ventas y el nº de empleados.
+```{r}
+
+chisq.test(data$ventas_agrupadas, data$size_empresa)
+
+````
+
+
+##Regresión lineal entre variables.
+
+R-squared:  0.006272. Se trata de un coeficiente muy bajo que demuestra que no existe relación lineal entre las variables.
+Es decir, el modelo no explica nada de las ventas a partir de la productividad.
+```{r}
+
+regresion<-lm(VENTAS~PRODUCTIVIDAD, data=data)
+summary(regresion)
+
+```
+
+
+R-squared:  0.7909. Se trata de un coeficiente que demuestra que existe una relación lineal fuerte entre las variables.
+Es decir, la variabilidad de las ventas queda explicada en un 79% por la variabilidad en el número de empleados.
+La pendiente de la recta es 441.081 lo que nos indica que por cada unidad adicional de trabajadores las ventas aumentarán
+en 441.081 euros.
+```{r}
+
+regresion_2<-lm(VENTAS~ `NÚMERO DE EMPLEADOS`, data=data)
+summary(regresion_2)
+
+plot( data$`NÚMERO DE EMPLEADOS`, data$VENTAS, xlab='Ventas', ylab='Nº empleados')
+abline(regresion_2)
+
+```
+
+
+Para una mejor evaluación del modelo de regresión analizaremos la normalidad, independencia y homocedasticidad a través
+de los residuos.
+En el gráfico podemos observar como existe una mayor concentración de los errores en los niveles de ventas menores. Sin
+embargo a medida que aumentan las ventas tambien aumenta la dispersión, por lo tanto no podemos decir que cumpla con 
+la condición de homocedasticidad.
+```{r}
+
+residuos<- rstandard(regresion_2)
+valores_ajustados<-fitted(regresion_2)
+plot(valores_ajustados, residuos)
+
+```
+
+
+Tras analizar el gráfico podemos observar que los residuos no siguen una distribuión normal.
+Para un análisis más profundo calculamos Shapiro-test y vemos que p < 0.05. Por lo tanto, rechazamos la hipótesis nula de
+que los residuos siguen una distribución normal.
+```{r}
+
+qqnorm(residuos)
+qqline(residuos)
+
+shapiro.test(residuos)
+
+```
+
+
+
+##VENTAS - Nº EMPLEADOS + PRODUCTIVIDAD
+
+R-squared:  0.8144. Se trata de un coeficiente que demuestra que existe una relación lineal fuerte entre las variables.
+Con el uso de las dos variables en conjunto logramos que el grado en que la recta se ajusta a la nube de puntos aumente.
+Por lo tanto, la recta de regresión explica una mayor proporción de variación.
+Tras analizar el modelo de regresión vemos que no es homocedástico y sus residuos no son normales. (p < 0.05)
+```{r}
+
+regresion_3<-lm(VENTAS~ `NÚMERO DE EMPLEADOS`+PRODUCTIVIDAD, data=data)
+summary(regresion_3)
+
+residuos<- rstandard(regresion_3)
+valores_ajustados<-fitted(regresion_3)
+plot(valores_ajustados, residuos)
+
+qqnorm(residuos)
+qqline(residuos)
+
+shapiro.test(residuos)
+
+
+```
+
+
+
+##VENTAS VS resto de variables
+
+El modelo presenta un R-squared:  0.8254. Este coeficiente es superior al resto de modelos anteriores, lo que implica
+que obtenemos una mejor aproximación de la recta de regresión a nuestros valores observados.
+Se observan variables con un p-value relativamente alto que no aportan una mayor infomación al modelo, aunque esto también
+puede deberse a que tienen un alto grado de correlación con otras variables, lo cual estudiaremos a continuación 
+mediante una tabla de correlaciones.
+Las variables de las que podemos prescindir son : 'rentabifin', 'liq', 'numac',  'estp', 'grupo'.  
+```{r}
+
+
+lm(VENTAS ~ ., data=data[ , !(names(data) %in% c('PROVINCIA','ventas_agrupadas', 'size_empresa'))])
+                          
+modelo_multiple <- lm(VENTAS ~ ., data=data[ , !(names(data) %in% c('REGISTRO', 'PROVINCIA','ventas_agrupadas', 'size_empresa'))])
+summary(modelo_multiple)
+
+```
+
+
+El modelo no cumple con la homocedasticidad y sus residuos tampoco son normales.
+```{r}
+residuos<- rstandard(modelo_multiple)
+valores_ajustados<-fitted(modelo_multiple)
+plot(valores_ajustados, residuos)
+
+qqnorm(residuos)
+qqline(residuos)
+
+```
+
+
+##Correlaciones 
+
+```{r}
+
+require(corrplot)
+
+corrplot(cor(data[,c("rentabieco", "endp", "PRODUCTIVIDAD", 'NÚMERO DE EMPLEADOS', "coe", "edad", 
+                     "conce", "numpa", "numest", "estp", "grupo", 'fju', 
+                     'rentabifin', 'liq', 'numac' )]), method = "circle")
+```
+
+
+Vemos cierta correlación entre pares de variables que analizaremos mas en profundidad a continuación.
+Se aprecie un poco de correlacion entre rentabieco y endp. Se puede analizar si el modelo mejora excluyendo alguno de estos 
+predictores junto con aquellas variables que tienen un p-value relativamente alto.
+```{r}
+
+colnames(data)
+attach(data)
+par(mfrow = c(2,2))
+plot(x = rentabieco , y = endp, pch = 20)
+plot(x = `NÚMERO DE EMPLEADOS`, y = coe, pch = 20)
+plot(x = `NÚMERO DE EMPLEADOS`, y = numest, pch = 20)
+
+```
+
+Se observa un R-squared:  0.825, de forma que se obtiene una mejora muy leve del modelo.
+```{r}
+
+
+modelo_multiple <- lm(VENTAS ~ ., data=data[ , !(names(data) %in% c('PROVINCIA','ventas_agrupadas', 'size_empresa',
+                                                                    'rentabifin','liq', 'numac', 'estp',  'grupo','endp'))])
+summary(modelo_multiple)
+
+```
+
+
+
+##Comportamiento de las ventas en Madrid vs. Barceona
+```{r}
+
+nuevo_df = data[, c('VENTAS','PROVINCIA')]
+
+df_madrid =nuevo_df[nuevo_df$PROVINCIA =='Madrid',]
+df_bcn= nuevo_df[nuevo_df$PROVINCIA =='Barcelona',]
+```
+
+
+Visualizamos los diagramas de caja para las  variables.
+```{r}
+
+lmts <- range(0,80000)
+
+par(mfrow = c(1, 2))
+
+boxplot(VENTAS~PROVINCIA,data=df_madrid, 
+        xlab="Madrid", ylab="Ventas", main="Ventas Madrid", ylim=lmts, col="orange")
+
+boxplot(VENTAS~PROVINCIA,data=df_bcn, 
+        xlab="Barcelona", ylab="Ventas", main="Ventas Barcelona", ylim=lmts, col="green")
+
+
+```
+
+```{r include=FALSE}
+
+boxplot2<-function(x,y)
+{
+  stats=boxplot.stats(x)$stats
+  f=fivenum(x)
+  stats2<-c(f[1],stats,f[5])
+  stats3<-c(f[1],f[5])
+  
+  boxplot(x,main=y,col="steelblue3")
+  abline(h=stats[1],lty=2,col="red")
+  abline(h=stats[5],lty=2,col="red")
+  text(rep(1.35,5),stats,labels=c('BIGOTE INFERIOR','PRIMER CUARTIL','MEDIANA','TERCER CUARTIL','BIGOTE SUPERIOR'))
+  text(rep(.5,7),stats2,labels=round(stats2,digits=4),cex=0.6)
+  text(rep(0.75,2),stats3,labels=c('M?NIMO','M?XIMO'))
+}
+
+
+```
+
+
+Visualizamos los diagramas de caja para las variables
+```{r}
+
+par(mfrow=c(1,2))
+boxplot2(df_madrid$VENTAS, 'Diagrama de cajas para la variable V1')
+boxplot2(df_bcn$VENTAS, 'Diagrama de cajas para la variable V2')
+
+fivenum(df_madrid$VENTAS)
+fivenum(df_bcn$VENTAS)
+
+```
+
+
+Como podemos observar hay valores anómalos de los que podemos prescindir para conocer mejor el comportamiento
+de las ventas en ambas ciudades.
+
+```{r include=FALSE}
+
+lmts <- range(0,23000)
+
+par(mfrow = c(1, 2))
+
+boxplot(VENTAS~PROVINCIA,data=df_madrid, 
+        xlab="Madrid", ylab="Ventas", main="Ventas Madrid", ylim=lmts, col="orange")
+
+boxplot(VENTAS~PROVINCIA,data=df_bcn, 
+        xlab="Barcelona", ylab="Ventas", main="Ventas Barcelona", ylim=lmts, col="green")
+
+
+```
+
+
+Tras hacer un análisis estadístico podemos ver que no hay una diferencia significativa en las ventas de Madrid y Barcelona.
+
+-En el caso de Madrid, el valor más bajo que presentan sus ventas es de 5.802 mientras que en Barcelona el valor más bajo
+es de 4.924.
+
+- El 25% de las tiendas en Madrid abarcan un rango entre 451.187- 1827.711. En barcelona ese rango va de 590.051 hasta 1855.448.
+
+- El 50% de las tiendas en barcelona presentan valores más altos en las ventas que en Madrid. En Barcelona llega a los 10.000 mientras que en madrid está en torno a los 8.600
+
+
+## T-test
+Para analizar mas en detalle este fenómeno establecemos Ho: Las ventas se comportan igual en ambas ciudades.
+Como observamos p-value > 0.05, por lo tanto, no rechazamos Ho, de forma que la media de ambas ciudades
+se comportan igual con un 95% de confianza.
+```{r}
+ttest = t.test(df_madrid$VENTAS, df_bcn$VENTAS)
+ttest
+```
+
+
+
+
+
